@@ -1,0 +1,56 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+
+<style>
+  .cart-btn{
+    padding:10px;
+    background:transparent;
+    border-radius:6px;
+    border:2px solid #111111;
+    color:#111;
+    
+    
+  }
+  
+  .desc{
+    padding: 60px 0;
+  }
+  
+  .desc span,h6{
+    font-size:26px;
+    color:#111;
+    font-weight:700;
+  }
+</style>
+
+
+<section class="desc">
+  <div class="container">
+    <div class="row mt-5 pt-4 justify-content-center">
+      
+      <div class="col-md-7">
+        <img src="{{product.thumb.url}}"width="100%">
+      </div>
+      <div class="col-md-5 pt-2">
+        <span class="badge bg-primary">{{product.category}}</span>
+        <br>
+        <span>{{product.name}}</span>
+        <br>
+        <span>${{product.price}}</span>
+        <br>
+        <a class="btn btn-outline-white cart-btn" href="{% url 'istore:cart' slug=product.slug %}">Add to Cart</a>
+      </div>
+    </div>
+    
+    <div class="row">
+      <div class="col-md-12">
+        <h6>Description</h6>
+        {{product.description}}
+      </div>
+    </div>
+  </div>
+  
+</section>
+
+{% endblock %}

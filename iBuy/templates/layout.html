@@ -1,0 +1,97 @@
+{% load static %}
+
+
+<!DOCTYPE HTML>
+<html>
+  <head>
+      <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <title>iStore</title>
+    
+    <link href="{% static 'css/style.css' %}"rel="stylesheet">
+    <link href="{% static 'lib/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+      <link href="{% static 'lib/font-awesome/css/font-awesome.min.css' %}" rel="stylesheet">
+ 
+
+
+  </head>
+</html>
+<body>
+  
+  {% load cart_tags %}
+<nav>
+  
+ <label class="logo">
+    <a class="logo-link"href="{% url 'istore:homepage' %}">iStore</a>
+    </label>
+      
+      <ul>
+        
+        
+     {% if request.user.is_authenticated %}
+    <li>
+     <form action="{% url 'accounts:logout' %}" method="post">
+       {% csrf_token %}
+       
+       <button type="submit" name="submit" class="btn btn-outline-white">Logout</button>
+     </form>
+     </li>
+     <li>
+          <a href="{% url 'istore:summary' %}">
+          
+        <span class="fa fa-shopping-cart my-cart-icon">
+        
+          <span class="badge badge-notify z-depth-1 mr-1">{{request.user|cart_count}}</span>
+          </span>
+        </i>
+        </a>
+        </li>
+  
+     {% else %}
+     <li>
+     <a class="" href="{% url 'accounts:login' %} ">Login</a>
+     </li>
+     <li>
+          <a href="">
+          
+        <span class="fa fa-shopping-cart my-cart-icon">
+        
+          <span class="badge badge-notify z-depth-1 mr-1">0</span>
+          </span>
+        </i>
+        </a>
+        </li>
+  
+     {% endif %}
+     
+        
+         </ul>
+     
+      
+</nav>
+
+
+    <div class="mt-5 pt-4">
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        {% endfor %}
+    {% endif %}
+    </div>
+{% block content %}
+{% endblock %}
+
+
+ <script src="{% static 'lib/jquery/jquery.min.js' %}"></script>
+  <script src="js/jquery.validate.min.js"></script>
+  <script src="{% static 'lib/bootstrap/js/bootstrap.min.js' %}"></script>
+  <script src="{% static 'js/jquery.mycart.js' %}"></script>
+  
+  </body>
+</html>

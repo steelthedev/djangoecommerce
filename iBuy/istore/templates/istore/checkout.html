@@ -1,0 +1,83 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<style>
+  
+  .address-btn,.stack-btn{
+    width:100%;
+    border-radius:8px;
+  }
+  .stack-btn{
+    background:green;
+    margin-top: 5px;
+  }
+  form{
+    width:100%;
+  }
+</style>
+
+
+
+     <div class="container mt-5">
+       <div class="row justify-content-center">
+         <form method="post" action="{% url 'istore:checkout' %}">
+           {%csrf_token%}
+           <div class="col-md-12">
+             {{form}}
+           </div>
+           
+           <input type="submit" class="address-btn btn-primary mt-4 btn-outline-white" name="submit" value="submit">
+           </div>
+         </form>
+         
+         
+        
+           
+           {% if form.is_valid %}
+           
+  <form action="{% url 'istore:payment' %}" method="post">
+    {% csrf_token %}
+    <div class="row justify-content-center">
+  <script src="https://js.paystack.co/v1/inline.js"></script>
+  <a type="button" class="btn btn-outline-white stack-btn btn-rounded" value="Pay With Paystack"href="{% url 'istore:payment' %} " onlick="payWithPaystack()">
+  </div>
+</form>
+
+<script>
+  function payWithPaystack(){
+    var handler = PaystackPop.setup({
+      key: 'pk_test_b88ac0a5a93154b449d6574ed60a20c8269c46d6',
+      email: 'akinwumikaliyanu@gmail.com',
+      amount: {{order.get_cart_total}} * 100,
+      ref: ''+Math.floor((Math.random() * 1000000000) + 1), // generates a pseudo-unique reference. Please replace with a reference you generated. Or remove the line entirely so our API will generate one for you
+      metadata: {
+        
+         custom_fields: [
+            {
+                display_name: "Mobile Number",
+                variable_name: "mobile_number",
+                value: "+2348012345678"
+            }
+         ]
+      },
+      callback: function(response){
+          alert('success. transaction ref is ' + response.reference);
+      },
+      onClose: function(){
+          alert('window closed');
+      }
+    });
+    handler.openIframe();
+  }
+</script>
+{% endif %}
+     </div>
+     </div>
+           
+           
+           
+       
+          
+
+
+{% endblock %}
