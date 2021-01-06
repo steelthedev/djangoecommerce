@@ -6,6 +6,12 @@ from django.contrib import messages
 from django.contrib.auth.decorators  import login_required
 from django.core.exceptions import ObjectDoesNotExist
 from .forms import ShipAddress
+from paystackapi.paystack import Paystack
+from paystackapi.transaction import Transaction
+from python_paystack.objects.transactions import Transaction
+from python_paystack.managers import TransactionsManager
+from python_paystack.paystack_config import PaystackConfig
+
 # Create your views here.
 
 def homepage(request):
@@ -23,8 +29,8 @@ def add_to_cart(request,slug):
     user=request.user
     customer=request.user.profile
     product=get_object_or_404(Product, slug=slug)
-    order_item,created=OrderItem.objects.get_or_create(customer=customer,product=product,complete=False)
-    order_qs=Order.objects.filter(customer=customer,complete=False)
+    order_item, created=OrderItem.objects.get_or_create(customer=customer,product=product,complete=False)
+    order_qs=Order.objects.filter(customer=customer,user=user,complete=False)
     if order_qs.exists():
       order=order_qs[0]
       if order.products.filter(product__slug=product.slug).exists():
@@ -40,7 +46,7 @@ def add_to_cart(request,slug):
         return redirect('istore:description',slug=slug)
     else:
       random=randint(1000,70000)
-      order=OrderItem.objects.create(customer=customer,transaction_id=random,user=request.user)
+      order=Order.objects.create(customer=customer,user=user,transaction_id=random,complete=False)
       order.products.add(order_item)
       messages.info(request,"Cart successfully created and item added")
       return redirect('istore:description',slug=slug)
@@ -79,8 +85,9 @@ def remove_cart(request,slug):
 @login_required
 def cart_view(request):
   user=request.user
+  customer=request.user.profile
   try:
-    order=Order.objects.get(user=user,complete=False)
+    order=Order.objects.get(customer=customer,user=user,complete=False)
     return render(request,'istore/cart.html',{'order':order})
   except ObjectDoesNotExist:
     messages.error(request,"No active Order")
@@ -151,7 +158,7 @@ def checkout_view(request):
 def shipping_address(request):
   return redirect('istore:checkout_view')
   
-def payment_view(request):
+"""def payment_view(request):
   if request.user.is_authenticated:
     customer=request.user.profile
     order=Order.objects.get(customer=customer,complete=False)
@@ -170,4 +177,22 @@ def payment_view(request):
       return redirect('istore:checkout')
     except ObjectDoesNotExist:
       messages.error(request,"Error")
-      return redirect('istore:checkout')
+      return redirect('istore:checkout')"""
+      
+def payment_view(request):
+  customer=request.user.profile
+  order=Order.objects.get(customer=customer,complete=False)
+  #response = Transaction.initialize(reference='555555555',amount=order.get_cart_total,emai='request.user.profile.email')
+  #return response
+
+
+  transaction = Transaction(2000, 'akinwumikaliyanu@gmail.com')
+  transaction_manager = TransactionsManager()
+  transaction = transaction_manager.initialize_transaction('STANDARD', transaction)
+  #Starts a standard transaction and returns a transaction object
+  
+  transaction.authorization_url
+  #Gives the authorization_url for the transaction
+  
+  #Transactions can easily be verified like so
+  transaction = transaction_manager.verify_transaction(transaction)

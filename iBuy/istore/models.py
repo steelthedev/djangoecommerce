@@ -7,7 +7,7 @@ from django.shortcuts import reverse
 
 # Create your models here.
 #class Customer(models.Model):
- # User=models.OneToOneField(User,null=True,blank=True,on_delete=models.CASCADE)
+  #User=models.OneToOneField(User,null=True,blank=True,on_delete=models.CASCADE)
   #name=models.CharField(max_length=200,null=True)
   #Email=models.EmailField(max_length=200)
   
@@ -86,7 +86,7 @@ class OrderItem(models.Model):
 
 
 class Order(models.Model):
-  user = models.OneToOneField(User, on_delete=models.CASCADE,null=True)
+  user = models.ForeignKey(User, on_delete=models.CASCADE,null=True)
   customer=models.ForeignKey(Profile,on_delete=models.SET_NULL,blank=True,null=True)
   products=models.ManyToManyField(OrderItem)
   address=models.ForeignKey(ShippingAddress,on_delete=models.SET_NULL,null=True)
