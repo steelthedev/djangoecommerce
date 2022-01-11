@@ -1,119 +1,77 @@
+
 {% extends 'layout.html' %}
+{% load static %}
 
 
 {% block content %}
 
-<style>
-
-section{
-
-    padding:60px 0;
-    position:absolute;
-    left:50%;
-    top:50%;
-    transform:translate(-50%,-50%);
-    width:100%;
-  }
-  
-.cart-shop , .cart-check{
-  padding:10px 10px 10px 10px;
-  color:#ffffff;
-  border:10px solid transparent;
-}
 
 
-.cart-shop{
-  background:#f4ec49;
-}
-  
-.cart-check{
-  background:#7cb342;
-}
+<div class="page-wrapper">
+  <div class="cart shopping">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-md-8 col-md-offset-2">
+          <div class="block">
+            <div class="product-list">
+              <form method="post">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th class="">Item Name</th>
+					  <th class=""> Item Quantity
+					  </th>
+                      <th class="">Item Price</th>
+                      <th class="">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+					{% for order_item in order.products.all %}
+                    <tr class="">
+                      <td class="">
+                        <div class="product-info">
+                          <img width="80" src="{{order_item.product.thumb.url}}" alt="" />
+                          <a href="#!">{{order_item.product.name}}</a>
+                        </div>
+                      </td>
+						
+					  <td class="">
+						<a class="cart-link"href="{% url 'istore:remove_one_cart' slug=order_item.product.slug  %}">
+							<i class="tf-ion-minus"></i>
+							</a>
 
-.table{
-  width:100%;
-}
-</style>
+						X{{order_item.quantity}}
 
-<section>
-<div class="container cart">
-  <div class="row ">
-    <div class="col-md-12">
-      <div class="table-responsive text-nowrap table-md table-hover table-stripped cart-table  ">
-        <table class="table table-stripped ">
-          <thead>
-            <tr>
-            <th>#</th>
-          <th>Item</th>
-          <th>Quantity</th>
-          <th>Price</th>
-          <th>Total</th>
-          </tr>
-          </thead>
-          <tbody>
-    {% for order_item in order.products.all %}
-          <tr>
-            <th scope="row">{{forloop.counter}}</th>
-          <td>{{order_item.product.name}}</td>
-          
-          
-            <td>
-             <a class="cart-link"href="{% url 'istore:remove_one_cart' slug=order_item.product.slug  %}">
-            <i class="fa fa-minus"></i>
-            </a>
-            {{order_item.quantity}}
-            <a class="cart-link"href="{% url 'istore:cart' slug=order_item.product.slug %}">
-              <i class="fa fa-plus"></i>
-            </a>
-            
-            </td>
-          
-          
-            <td>${{order_item.product.price}}</td>
-          
-            <td>${{order_item.get_item_price}}</td>
-            
-            
-            <td><a class="btn btn-outline-white btn-danger pull-right" href="{% url 'istore:remove_cart' slug=order_item.product.slug %}"><i class="fa fa-trash "></i></a>
-            </td>
-          </tr>
-          
-          {% endfor %}
-          
-          <tr>
-            <td>Total price</td>
-            
-            <td colspan="5">${{order.get_cart_total}}</td>
-            
-          </tr>
-          
-          <tr>
-            
-            
-            <td colspan="5">
-              <a class="btn cart-shop btn-outline-white pull-right" href="{%  url 'istore:homepage' %}">
-                Continue shopping
-              </a>
-            </td>
-            {% if order.get_cart_total %}
-            <td colspan="5">
-              <a class="btn cart-check btn-outline-white  pull-right" name="checkout-btn" href="{% url 'istore:checkout' %}">Proceed To Checkout</a>
-            </td>
-            {% endif %}
-          </tr>
-          
-          </tbody>
-        </table>
+						<a class="cart-link"href="{% url 'istore:one_cart' slug=order_item.product.slug %}">
+							<i class="tf-ion-plus"></i>
+						  </a>
+					  </td>
+                      <td class="">${{order_item.get_item_price}}</td>
+                      <td class="">
+                        <a class="product-remove" href="{% url 'istore:remove_cart' slug=order_item.product.slug %}">Remove</a>
+                      </td>
+                    </tr>
+
+					
+					{% endfor %}
+
+					<tr>
+						<td>Total price</td>
+						
+						<td colspan="5" rowspan="5">${{order.get_cart_total}}</td>
+						
+					  </tr>
+                  
+                  </tbody>
+                </table>
+                <a href="{% url 'istore:checkout' %}" class="btn btn-main pull-right float-right ">Checkout</a>
+              </form>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </div>
-</section>
-
-
-
-
-
-
 
 {% endblock %}

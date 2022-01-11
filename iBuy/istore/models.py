@@ -4,7 +4,7 @@ from django.db.models.signals import post_save
 from django.db.models import Sum
 from django.dispatch import receiver
 from django.shortcuts import reverse
-
+from .paystack import PayStack
 # Create your models here.
 #class Customer(models.Model):
   #User=models.OneToOneField(User,null=True,blank=True,on_delete=models.CASCADE)
@@ -62,6 +62,8 @@ class ShippingAddress(models.Model):
   address=models.CharField(max_length=250)
   city=models.CharField(max_length=250)
   phone_number=models.IntegerField(null=True)
+  zip = models.CharField(null=True, max_length=200)
+  country = models.CharField(null=True, max_length=200)
   
   def __str__(self):
     return self.address
@@ -75,6 +77,7 @@ class OrderItem(models.Model):
   quantity=models.IntegerField(default=1,null=True,blank=True)
   complete=models.BooleanField(default=False,null=True,blank=False)
   date_added=models.DateTimeField(auto_now_add=True)
+
   
   def __str__(self):
     return f"{self.quantity} of {self.product.name}"
@@ -82,6 +85,8 @@ class OrderItem(models.Model):
   def get_item_price(self):
     total =self.product.price * self.quantity
     return total
+
+
 
 
 
@@ -102,6 +107,24 @@ class Order(models.Model):
     total=sum([item.get_item_price for item in orderitem])
     return total
     
+  def verify_payment(self):
+    paystack = PayStack()
+    order_item = OrderItem.objects.filter(customer =self.customer , complete = False)
+    status, result = paystack.verify_payment(self.transaction_id , self.get_cart_total)
+    if status:
+      if result['amount'] / 100 == self.get_cart_total:
+        self.complete = True
+        self.amount = self.get_cart_total
+        self.products.complete = True
+        for order_item in order_item:
+            order_item.complete = True
+            order_item.save()
+        self.save()
+     
+
+      if self.complete:
+          return True
+    return False
     
     
 class Payment(models.Model):

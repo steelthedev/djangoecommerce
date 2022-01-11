@@ -12,3 +12,4 @@ def cart_count(user):
     if query.exists():
       return query[0].products.count()
   return 0
+

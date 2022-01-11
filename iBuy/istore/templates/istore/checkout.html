@@ -1,83 +1,228 @@
 {% extends 'layout.html' %}
 
+{% load static %}
+
 {% block content %}
-<style>
-  
-  .address-btn,.stack-btn{
-    width:100%;
-    border-radius:8px;
-  }
-  .stack-btn{
-    background:green;
-    margin-top: 5px;
-  }
-  form{
-    width:100%;
-  }
-</style>
+  <section class="page-header">
+   <div class="container">
+    <div class="row">
+     <div class="col-md-12">
+      <div class="content">
+       <h1 class="page-name">
+        Checkout
+       </h1>
+       <ol class="breadcrumb">
+        <li>
+         <a href="index.html">
+          Home
+         </a>
+        </li>
+        <li class="active">
+         checkout
+        </li>
+       </ol>
+      </div>
+     </div>
+    </div>
+   </div>
+  </section>
+  <div class="page-wrapper">
+   <div class="checkout shopping">
+    <div class="container">
+     <div class="row">
+      <div class="col-md-8">
+       <div class="block billing-details">
+        <h4 class="widget-title">
+         Billing Details
+        </h4>
+        {% if submitbutton != "submit" %}
+        <form class="checkout-form" action="{% url 'istore:checkout' %}" method="post">
+          {% csrf_token %}
+         <div class="form-group">
+          <label for="full_name">
+           Full Name
+          </label>
+          <input class="form-control" id="full_name" name=""  placeholder="" type="text"/>
+         </div>
+         <div class="form-group">
+          <label for="user_address">
+           Address
+          </label>
+          <input class="form-control" id="user_address" name="address" required placeholder="" type="text"/>
+         </div>
+         <div class="form-group">
+          <label for="user_address">
+            Phone No
+          </label>
+          <input class="form-control" id="phone_number" name="phone_number" required placeholder="" type="text"/>
+         </div>
+         <div class="checkout-country-code clearfix">
+          <div class="form-group">
+           <label for="user_post_code">
+            Zip Code
+           </label>
+           <input class="form-control" id="user_post_code" name="zip" type="text" value=""/>
+          </div>
+          <div class="form-group">
+           <label for="user_city">
+            City
+           </label>
+           <input class="form-control" id="user_city" name="city" type="text" value=""/>
+          </div>
+         </div>
+         <div class="form-group">
+          <label for="user_country">
+           Country
+          </label>
+          <input class="form-control" id="user_country"  name="country" required placeholder="" type="text"/>
+         </div>
+         <button class="btn-main btn" type="submit" value="submit" name="btn-s">Submit</button>
+        </form>
+        {% endif %}
+       </div>
+       {% if submitbutton == "submit" %}
+       <div class="block">
+        <h4 class="widget-title">
+         Payment Method
+        </h4>
+        <p>
+         Credit Cart Details (Secure payment)
+        </p>
+        <div class="checkout-product-details">
+         <div class="payment">
+          <div class="card-details">
+            <form >
+              <script src="https://js.paystack.co/v1/inline.js"></script>
+              <button type="button" class="btn btn-md btn-success btn-outline-white p-3" onclick="payWithPaystack()"> Pay With Paystack </button> 
+            </form>
+             
+            <script>
+              function payWithPaystack(){
+                var handler = PaystackPop.setup({
+                  key: '{{paystack_public}}',
+                  email: '{{request.user.email}}',
+                  amount: {{order.get_cart_total}} * 100,
+                  currency: "NGN",
+                  ref: '{{order.transaction_id}}',
+                  firstname: '{{request.user.first_name}}',
+                  lastname: '{{request.user.last_name}}',
+                  // label: "Optional string that replaces customer email"
+                  metadata: {
+                     custom_fields: [
+                        {
+                            display_name: "Mobile Number",
+                            variable_name: "mobile_number",
+                            value: "+2348012345678"
+                        }
+                     ]
+                  },
+                  callback: function(response){
+                      alert('success. transaction ref is ' + response.reference);
 
+                      window.location.href= "{% url 'istore:verify_payment' order.transaction_id %}"
+                  },
 
+            
 
-     <div class="container mt-5">
-       <div class="row justify-content-center">
-         <form method="post" action="{% url 'istore:checkout' %}">
-           {%csrf_token%}
-           <div class="col-md-12">
-             {{form}}
-           </div>
-           
-           <input type="submit" class="address-btn btn-primary mt-4 btn-outline-white" name="submit" value="submit">
-           </div>
-         </form>
-         
-         
-        
-           
-           {% if form.is_valid %}
-           
-  <form action="{% url 'istore:payment' %}" method="post">
-    {% csrf_token %}
-    <div class="row justify-content-center">
-  <script src="https://js.paystack.co/v1/inline.js"></script>
-  <a type="button" class="btn btn-outline-white stack-btn btn-rounded" value="Pay With Paystack"href="{% url 'istore:payment' %} " onlick="payWithPaystack()">payWithPaystack</a>
+                  onClose: function(){
+                      alert('window closed');
+                  }
+                });
+                handler.openIframe();
+              }
+            </script>
+          </div>
+         </div>
+        </div>
+       </div>
+
+       {% endif %}
+      </div>
+      <div class="col-md-4">
+       <div class="product-checkout-details">
+        <div class="block">
+         <h4 class="widget-title">
+          Order Summary
+         </h4>
+         {% for order_item in order.products.all %}
+         <div class="media product-card">
+          <a class="pull-left" href="{% url 'istore:description' order_item.product.slug %}">
+           <img alt="Image" class="media-object" src="{{order_item.product.thumb.url}}"/>
+          </a>
+          <div class="media-body">
+           <h4 class="media-heading">
+            <a href="{% url 'istore:description' order_item.product.slug %}">
+             {{ order_item.product.name }}
+            </a>
+           </h4>
+           <p class="price">
+            {{order_item.quantity}} x ${{order_item.product.price}}
+           </p>
+           <span class="remove">
+            <a href="{% url 'istore:remove_cart' order_item.product.slug %}">Remove</a>
+           </span>
+          </div>
+         </div>
+         {% endfor %}
+         <div class="discount-code">
+          <p>
+           Have a discount ?
+           <a data-target="#coupon-modal" data-toggle="modal" href="#!">
+            enter it here
+           </a>
+          </p>
+         </div>
+         <ul class="summary-prices">
+          <li>
+           <span>
+            Subtotal:
+           </span>
+           <span class="price">
+            ${{order.get_cart_total}}
+           </span>
+          </li>
+          <li>
+           <span>
+            Shipping:
+           </span>
+           <span>
+            Free
+           </span>
+          </li>
+         </ul>
+         <div class="summary-total">
+          <span>
+           Total
+          </span>
+          <span>
+           ${{order.get_cart_total}}
+          </span>
+         </div>
+         <div class="verified-icon">
+          <img src="{% static 'images/shop/verified.png' %}"/>
+         </div>
+        </div>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
   </div>
-</form>
-
-<script>
-  function payWithPaystack(){
-    var handler = PaystackPop.setup({
-      key: 'pk_test_b88ac0a5a93154b449d6574ed60a20c8269c46d6',
-      email: 'akinwumikaliyanu@gmail.com',
-      amount: {{order.get_cart_total}} * 100,
-      ref: ''+Math.floor((Math.random() * 1000000000) + 1), // generates a pseudo-unique reference. Please replace with a reference you generated. Or remove the line entirely so our API will generate one for you
-      metadata: {
-        
-         custom_fields: [
-            {
-                display_name: "Mobile Number",
-                variable_name: "mobile_number",
-                value: "+2348012345678"
-            }
-         ]
-      },
-      callback: function(response){
-          alert('success. transaction ref is ' + response.reference);
-      },
-      onClose: function(){
-          alert('window closed');
-      }
-    });
-    handler.openIframe();
-  }
-</script>
-{% endif %}
+  <!-- Modal -->
+  <div class="modal fade" id="coupon-modal" role="dialog" tabindex="-1">
+   <div class="modal-dialog" role="document">
+    <div class="modal-content">
+     <div class="modal-body">
+      <form>
+       <div class="form-group">
+        <input class="form-control" required placeholder="Enter Coupon Code" type="text"/>
+       </div>
+       <button class="btn btn-main" type="submit">
+        Apply Coupon
+       </button>
+      </form>
      </div>
-     </div>
-           
-           
-           
-       
-          
-
-
+    </div>
+   </div>
+  </div>
 {% endblock %}

@@ -6,22 +6,38 @@ from django.contrib import messages
 from django.contrib.auth.decorators  import login_required
 from django.core.exceptions import ObjectDoesNotExist
 from .forms import ShipAddress
-from paystackapi.paystack import Paystack
-from paystackapi.transaction import Transaction
-from python_paystack.objects.transactions import Transaction
-from python_paystack.managers import TransactionsManager
-from python_paystack.paystack_config import PaystackConfig
+from django.http.request import HttpRequest
+from django.http.response import HttpResponse
+
 
 # Create your views here.
 
 def homepage(request):
+ 
   product=Product.objects.all()
-  return render(request,'istore/homepage.html',{'product':product})
+  try:
+    user=request.user
+    customer=request.user.profile
+    order=Order.objects.get(customer=customer,user=user,complete=False)
+    context={
+      'product':product,
+      'order':order
+    }
+  except:
+    context={
+      'product':product,
+    }
+    return render(request,'istore/index.html', context)
+
+  return render(request,'istore/index.html',context)
 
 
 def desc_view(request,slug):
   product=Product.objects.get(slug=slug)
-  return render(request,'istore/desc.html',{'product':product})
+  context = {
+    'product':product
+    }
+  return render(request,'istore/product-single.html',context)
 
 @login_required
 def add_to_cart(request,slug):
@@ -37,13 +53,13 @@ def add_to_cart(request,slug):
         
         order_item.quantity += 1
         order_item.save()
-        messages.info(request,"Quantity  successfully updated")
-        return redirect('istore:summary')
+        messages.info(request,"Quantity successfully updated")
+        return redirect('istore:homepage')
       else:
       
         order.products.add(order_item)
         messages.info(request,"item successfully added to cart")
-        return redirect('istore:description',slug=slug)
+        return redirect('istore:homepage')
     else:
       random=randint(1000,70000)
       order=Order.objects.create(customer=customer,user=user,transaction_id=random,complete=False)
@@ -116,83 +132,72 @@ def remove_one_cart(request,slug):
   else:
     messages.info(request,"You must be logged in")
     return redirect('istore:homepage')
-    
+
+
+def add_one_cart(request,slug):
+  if request.user.is_authenticated:
+    user=request.user
+    customer=request.user.profile
+    product=get_object_or_404(Product, slug=slug)
+    order_item, created=OrderItem.objects.get_or_create(customer=customer,product=product,complete=False)
+    order_qs=Order.objects.filter(customer=customer,user=user,complete=False)
+    if order_qs.exists():
+      order=order_qs[0]
+      if order.products.filter(product__slug=product.slug).exists():
+        
+        order_item.quantity += 1
+        order_item.save()
+        messages.info(request,"Quantity successfully updated")
+        return redirect('istore:summary')
     
     
 def checkout_view(request):
-  submitbutton = request.POST.get("submit")
-  order=Order.objects.get(customer=request.user.profile,complete=False)
+  context ={}
+  submitbutton = request.POST.get("btn-s")
+  paystack_public = "pk_test_ef1bea703713ac519754d7b88f3b56ea141c1d67"
+  try:
+    order=Order.objects.get(customer=request.user.profile,complete=False)
+  except ObjectDoesNotExist:
+    return redirect("/")
+
   if request.method == 'POST':
     customer=request.user.profile
-    form=ShipAddress(request.POST)
-    
+    address = request.POST['address']
+    city = request.POST['city']
+    phone_number = request.POST['phone_number']
+    zip = request.POST['zip']
+    country = request.POST['country']
     try:
-      order=Order.objects.get(customer=customer,complete=False)
-      if form.is_valid():
-        city=form.cleaned_data.get('city')
-        address=form.cleaned_data.get('address')
-        phone_number=form.cleaned_data.get('phone_number')
-        ship_address=ShippingAddress(customer=customer,
-        city=city,
-        address=address,
-        phone_number=phone_number)
-        ship_address.save()
-        
-        order.address=ship_address
-        
-        order.save()
-        messages.success(request,"Success")
-        #return redirect('istore:checkout')
-      else:
-        messages.error(request,"Failed")
+      order=Order.objects.get(customer=customer,complete=False)  
+      ship_address=ShippingAddress(customer=customer,
+      city=city,
+      address=address,
+      phone_number=phone_number, zip=zip, country = country)
+      ship_address.save()
+      paystack_secret = "sk_test_b1630e59eb70f2592023210935c7894455b9ac1b"
+      order.address=ship_address
+      order.save()
+      messages.success(request,"Success")
     except ObjectDoesNotExist:
       messages.error(request,"No active Order")
       return redirect('/')
-    
-      
-  
-  else:
-    form=ShipAddress()
-  return render(request,'istore/checkout.html',{'form':form, 'order':order,'submitbutton':submitbutton})
+  context={
+    'order':order,
+    'submitbutton':submitbutton,
+    'paystack_public':paystack_public,
+    'order':order
+    }
+  return render(request,'istore/checkout.html',context)
     
 def shipping_address(request):
   return redirect('istore:checkout_view')
   
-"""def payment_view(request):
-  if request.user.is_authenticated:
-    customer=request.user.profile
-    order=Order.objects.get(customer=customer,complete=False)
-    payment=Payment
-    try:
-      order=Order.objects.get(customer=customer,complete=False)
-      payment.objects.create(
-        customer=customer,
-        amount=order.get_cart_total,
-        reference=order.transaction_id
-        )
-      order.amount=payment.amount
-      order.complete=True
-      order.save()
-      messages.success(request,"it do")
-      return redirect('istore:checkout')
-    except ObjectDoesNotExist:
-      messages.error(request,"Error")
-      return redirect('istore:checkout')"""
-      
-def payment_view(request):
-  customer=request.user.profile
-  order=Order.objects.get(customer=customer,complete=False)
-  #response = Transaction.initialize(reference='555555555',amount=order.get_cart_total,emai='request.user.profile.email')
-  #return response
 
-
-  transaction = Transaction(2000, 'akinwumikaliyanu@gmail.com')
-  transaction_manager = TransactionsManager()
-  transaction = transaction_manager.initialize_transaction('STANDARD', transaction)
-  #Starts a standard transaction and returns a transaction object
-  
-  transaction.authorization_url
-  #Gives the authorization_url for the transaction
-  
-  #Transactions can easily be verified like so
-  transaction = transaction_manager.verify_transaction(transaction)
+def verify_payment(request:HttpRequest, ref) -> HttpResponse:
+    order = get_object_or_404(Order, transaction_id=ref)
+    verified = order.verify_payment()
+    if verified:
+        messages.success(request," Alright mate you have successfullly purchased our package")
+    else:
+        messages.error(request,"verification failed ")
+    return redirect('istore:checkout')
